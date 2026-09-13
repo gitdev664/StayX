@@ -2,19 +2,9 @@ const express = require("express");
 const router = express.Router({ mergeParams: true });
 const wrapAsync = require("../utils/wrapAsync.js");
 const expressError = require("../utils/expressError.js");
-const { reviewSchema } = require("../schema.js");
 const Review = require("../models/review.js");
 const Listing = require("../models/listing.js");
-
-const validateReview = (req, res, next) => {
-  let { error } = reviewSchema.validate(req.body);
-  if (error) {
-    let errMsg = error.details.map((el) => el.message).join(",");
-    throw new expressError(400, errMsg);
-  } else {
-    next();
-  }
-};
+const { validateReview } = require("../middleware.js");
 
 // Reviews
 //post review route
@@ -29,6 +19,7 @@ router.post(
 
     await newReview.save();
     await listing.save();
+    req.flash("success", "New Review Created!");
 
     res.redirect(`/listings/${listing._id}`);
   })
@@ -44,6 +35,7 @@ router.delete(
       $pull: { reviews: mongoose.Types.ObjectId(reviewId) },
     });
     await Review.findByIdAndDelete(reviewId);
+    req.flash("success", "Review Deleted!");
 
     res.redirect(`/listings/${id}`);
   })
